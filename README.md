@@ -1,17 +1,15 @@
 # ConstantRecord
 
-ActiveRecord in-memory querying and associations for constant records and static data.
-Improves performance and decreases bugs due to data mismatches.
+In-memory ActiveRecord querying and associations for static data.
 
-This is compatible with all current versions of Rails, from 3.x up through 4.1
+Compatible with all current versions of Rails, from 3.x up through 4.1
 (and beyond, theoretically).
 
 Unlike previous (ambitious) approaches that have tried to duplicate ActiveRecord
-functionality in a separate set of classes, this is a simple shim that creates an
-in-memory SQLite database for the relevant models.  This is designed to minimize
-breakage between Rails versions.  The Rails team is famous for making sweeping
-changes to the association implementation details between minor versions of Rails,
-so we try to keep a Safe Distance (TM).
+functionality in a separate set of classes, this is a simple shim of < 200 LOC
+that creates an in-memory SQLite database for the relevant models.  This is designed
+to minimize breakage between Rails versions, and also avoids recreating ActiveRecord
+features.
 
 ## Installation
 
@@ -92,7 +90,7 @@ Once setup, all the familiar ActiveRecord finders work:
     Genre.find_by_slug("pop")
     Genre.where(name: "Rock").first
 
-And so on.  Attempts to modify values will fail:
+Attempts to modify values will fail:
 
     @genre = Genre.find(2)
     @genre.slug = "hip-hop"
@@ -124,7 +122,7 @@ This makes it cleaner to do queries in your app:
     Genre.find(Genre::ROCK)
     Song.where(genre_id: Genre::ROCK)
 
-And such things.
+And so on.
 
 ## Associations
 
@@ -182,6 +180,22 @@ If you forget to define data, you'll get a "table doesn't exist" error:
 
 This is because the table is created lazily when you first load data.
 
+If you try to add a custom column on a different `data` line:
+
+    class Genre < ActiveRecord::Base
+      include ConstantRecord
+
+      data id: 1, name: "Rock",    slug: "rock"
+      data id: 2, name: "Hip-Hop", slug: "hiphop"
+      data id: 3, name: "Pop",     slug: "pop", ranking: 1  # oops
+    end
+
+You'll get a table error:
+
+    ActiveRecord::UnknownAttributeError: unknown attribute: ranking
+
+The solution is to include the same columns on each `data` line.
+
 ## Other Projects
 
 Inspired by a couple previous efforts:
@@ -196,6 +210,6 @@ Other projects seen in the wild:
 * [constant_record](https://github.com/topdan/constant_record)
 * [frozen_record](https://github.com/byroot/frozen_record)
 
-All are good efforts, but unfortunately ActiveRecord continues to make sharp left turns
-with its internals.  This makes it very difficult to maintain compatibility over time
-if you write a gem that is too tightly coupled to Rails.
+All are good efforts, but unfortunately the Rails team is known to make sweeping
+changes to internal ActiveRecord implementation details between different versions
+of Rails.  This makes it very difficult to maintain compatibility over time.

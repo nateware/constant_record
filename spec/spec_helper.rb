@@ -5,6 +5,7 @@ if $0 =~ /\brspec$/
   raise "\n===\nThese tests are in bacon, not rspec.  Try: bacon #{ARGV * ' '}\n===\n"
 end
 
+require 'date' # datetime
 require 'constant_record'
 require 'active_record'
 require 'sqlite3'

@@ -1,3 +1,25 @@
+#
+# To use, `include ConstantRecord` in any ActiveRecord class. Then, you can use `data`
+# to add data directly in that class for clarity:
+#
+#     class Genre < ActiveRecord::Base
+#       include ConstantRecord
+#
+#       data id: 1, name: "Rock",    slug: "rock"
+#       data id: 2, name: "Hip-Hop", slug: "hiphop"
+#       data id: 3, name: "Pop",     slug: "pop"
+#     end
+#
+# Or, you can choose to keep your data in a YAML file:
+#
+#     class Genre < ActiveRecord::Base
+#       include ConstantRecord
+#       load_data File.join(Rails.root, 'config', 'data', 'genres.yml')
+#     end
+#
+# The YAML file should be an array of hashes.  Once initialized, all
+# familiar ActiveRecord finders and associations should work as expected.
+#
 require "active_record"
 require "constant_record/version"
 
@@ -6,6 +28,7 @@ module ConstantRecord
   class BadDataFile < Error;   end
 
   MEMORY_DBCONFIG = {adapter: 'sqlite3', database: ":memory:", pool: 5}.freeze
+
 
   class << self
     def memory_dbconfig
@@ -32,6 +55,9 @@ module ConstantRecord
     end
   end
 
+  #
+  # Loads data either directly in the model class, or from a YAML file.
+  #
   module DataLoading
     def data_file
       @data_file || File.join(ConstantRecord.data_dir, "#{self.to_s.tableize}.yml")
@@ -64,6 +90,7 @@ module ConstantRecord
       @loaded || false
     end
 
+    # Define a constant record: data id: 1, name: "California", slug: "CA"
     def data(attrib)
       attrib.symbolize_keys!
       raise ArgumentError, "#{self}.data expects a Hash of attributes" unless attrib.is_a?(Hash)
@@ -95,6 +122,9 @@ module ConstantRecord
       end
     end
 
+    protected
+
+    # Create our in-memory table based on columns we have defined in our data.
     def create_memory_table(attrib)
       db_columns = {}
       attrib.each do |col,val|
@@ -103,7 +133,9 @@ module ConstantRecord
           case val
           when Integer then :integer
           when Float   then :decimal
-          else              :string
+          when Date    then :date
+          when DateTime, Time then :datetime
+          else :string
           end
       end
 
@@ -116,6 +148,9 @@ module ConstantRecord
     end
   end
 
+  #
+  # Hooks to integrate ActiveRecord associations with constant records.
+  #
   module Associations
     def self.included(base)
       base.extend self # support "include" as well
@@ -147,6 +182,9 @@ module ConstantRecord
     end
   end
 
+  #
+  # Raise an error if the application attempts to change constant records.
+  #
   module ReadOnly
     def self.included(base)
       base.extend ClassMethods

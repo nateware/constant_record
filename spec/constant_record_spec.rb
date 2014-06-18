@@ -3,17 +3,37 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 describe "ConstantRecord" do
   describe "loading data" do
     it "data(attr: val)" do
-      Author.data(id: 1, name: "One")
-      Author.data(id: 3, name: "Three")
-      Author.data(id: 2, name: "Two")
+      date1 = Time.now
+      date2 = Date.new
+      date3 = DateTime.new
+
+      # insert out of order to ensure we can override ID
+      Author.data(id: 1, name: "One",   birthday: date1)
+      Author.data(id: 3, name: "Three", birthday: date3)
+      Author.data(id: 2, name: "Two",   birthday: date2)
+
       Author.count.should == 3
       Author.find(1).name.should == "One"
       Author.find(2).name.should == "Two"
       Author.find(3).name.should == "Three"
-      Author.find_by_name("One").id.should == 1
-      Author.find_by_name("Two").id.should == 2
-      Author.find_by_name("Three").id.should == 3
+
+      author = Author.find_by_name("One")
+      author.id.should == 1
+      author.birthday.should == date1
+
+      author = Author.find_by_name("Two")
+      author.id.should == 2
+      author.birthday.should == date2
+
+      author = Author.find_by_name("Three")
+      author.id.should == 3
+      author.birthday.should == date3
+    end
+
+    it "supports AR finders" do
       Author.where(id: [1,2]).count.should == 2
+      Author.where(['name like ?', 'Three']).count.should == 1
+      Author.where(['birthday <= ?', Time.now]).count.should == 3
     end
 
     it "rejects dup ID's" do
@@ -30,6 +50,7 @@ describe "ConstantRecord" do
       Publisher.where('id is not null').delete_all # hackaround ReadOnlyRecord
       Publisher.count.should == 0
       Publisher.reload!
+      Publisher.count.should == 3
       Publisher.data(id: 23, name: "Flop")
       Publisher.count.should == 4
     end

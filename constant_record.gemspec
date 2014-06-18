@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.version       = ConstantRecord::VERSION
   spec.authors       = ["Nate Wiger"]
   spec.email         = ["nwiger@gmail.com"]
-  spec.summary       = %q{ActiveRecord querying and associations for in-memory constants and static records.}
+  spec.summary       = %q{In-memory ActiveRecord querying and associations for static data.}
   spec.description   = <<-EndDesc
-  ActiveRecord querying and associations for in-memory constants and static records.
+  In-memory ActiveRecord querying and associations for static data.
   Improves performance and decreases bugs due to data mismatches.
   EndDesc
   spec.homepage      = ""
@@ -21,8 +21,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  # Allow any AR versions, but need at least one
-  spec.add_dependency "activesupport"
+  # Allow any AR versions, but need at least one. Also sqlite for the table.
   spec.add_dependency "activerecord"
   spec.add_dependency "sqlite3"
 
