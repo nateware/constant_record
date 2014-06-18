@@ -1,0 +1,9 @@
+---
+- id: 1
+  publisher_id: 1
+  name: Michael Pollan
+- id: 2
+  name: Piers Anthony
+- id: 3
+  publisher_id: 2
+  name: Chuck Palahniuk
