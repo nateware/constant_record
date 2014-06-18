@@ -68,7 +68,9 @@ You can omit the filename if it follows the naming convention of `config/data/[t
 
 Alternatively, you can load your data via some other external method.  Note that you will need
 to reload your data each time Rails restarts, since the data is in-memory only.  This means
-adding a reload hook after Unicorn / Passenger / Puma fork.
+adding a reload hook after Unicorn / Passenger / Puma fork:
+
+    Genre.reload!
 
 Once you define your class, this will create an in-memory `sqlite` database which is then
 hooked into ActiveRecord.  A database table is created on the fly, consisting of the columns

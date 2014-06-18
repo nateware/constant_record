@@ -26,6 +26,13 @@ describe "ConstantRecord" do
       Publisher.find(2).name == 'Penguin'
     end
 
+    it "supports reload!" do
+      Publisher.where('id is not null').delete_all # hackaround ReadOnlyRecord
+      Publisher.count.should == 0
+      Publisher.reload!
+      Publisher.data(id: 23, name: "Flop")
+      Publisher.count.should == 4
+    end
 
     it "rejects missing data files" do
       should.raise(Errno::ENOENT){ Publisher.load_data 'nope.yml' }
