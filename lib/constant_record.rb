@@ -27,8 +27,7 @@ module ConstantRecord
   class Error < StandardError; end
   class BadDataFile < Error;   end
 
-  MEMORY_DBCONFIG = {adapter: 'sqlite3', database: ":memory:", pool: 5}.freeze
-
+  MEMORY_DBCONFIG = {adapter: 'sqlite3', database: ":memory:"}.freeze
 
   class << self
     def memory_dbconfig
@@ -51,7 +50,8 @@ module ConstantRecord
       base.extend DataLoading
       base.extend Associations
       base.send :include, ReadOnly
-      base.establish_connection(memory_dbconfig) unless base.send :connected?
+      base.remove_connection if base.connected?
+      base.establish_connection(memory_dbconfig)
     end
   end
 
@@ -99,10 +99,7 @@ module ConstantRecord
         raise ArgumentError, "#{self}.data missing primary key '#{primary_key}': #{attrib.inspect}"
       end
 
-      unless @table_was_created
-        create_memory_table(attrib)
-        @table_was_created = true
-      end
+      create_memory_table(attrib) unless connection.table_exists?(table_name)
 
       new_record = new(attrib)
       new_record.id = attrib[primary_key.to_sym]

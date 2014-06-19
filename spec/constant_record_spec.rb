@@ -1,6 +1,14 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "ConstantRecord" do
+  describe "connection" do
+    it "has an in-memory DB" do
+      dbconfig = Author.connection.instance_variable_get(:@config)
+      dbconfig[:adapter].should  == "sqlite3"
+      dbconfig[:database].should == ":memory:"
+    end
+  end
+
   describe "loading data" do
     it "data(attr: val)" do
       date1 = Time.now
