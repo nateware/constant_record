@@ -32,15 +32,11 @@ if ENV['DEBUG']
   ActiveRecord::Base.logger.level = Logger::DEBUG
 end
 
-class Author < ActiveRecord::Base
-  include ConstantRecord
-
+class Author < ConstantRecord::Base
   has_many :articles
 end
 
-class Publisher < ActiveRecord::Base
-  include ConstantRecord
-
+class Publisher < ConstantRecord::Base
   has_many :article_publishers
   has_many :articles, through: :article_publishers
 end

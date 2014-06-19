@@ -7,6 +7,11 @@ describe "ConstantRecord" do
       dbconfig[:adapter].should  == "sqlite3"
       dbconfig[:database].should == ":memory:"
     end
+
+    it "shares the same database" do
+      Author.connection.should == Publisher.connection
+      Author.connection.should == ConstantRecord::Base.connection
+    end
   end
 
   describe "loading data" do

@@ -1,10 +1,8 @@
 #
-# To use, `include ConstantRecord` in any ActiveRecord class. Then, you can use `data`
-# to add data directly in that class for clarity:
+# Inherit from `ConstantRecord::Base` just like you would with ActiveRecord.
+# Then, you can use `data` to add data directly in that class for clarity:
 #
-#     class Genre < ActiveRecord::Base
-#       include ConstantRecord
-#
+#     class Genre < ConstantRecord::Base
 #       data id: 1, name: "Rock",    slug: "rock"
 #       data id: 2, name: "Hip-Hop", slug: "hiphop"
 #       data id: 3, name: "Pop",     slug: "pop"
@@ -12,8 +10,7 @@
 #
 # Or, you can choose to keep your data in a YAML file:
 #
-#     class Genre < ActiveRecord::Base
-#       include ConstantRecord
+#     class Genre < ConstantRecord::Base
 #       load_data File.join(Rails.root, 'config', 'data', 'genres.yml')
 #     end
 #
@@ -27,31 +24,15 @@ module ConstantRecord
   class Error < StandardError; end
   class BadDataFile < Error;   end
 
-  MEMORY_DBCONFIG = {adapter: 'sqlite3', database: ":memory:"}.freeze
+  DATABASE_CONFIG = { adapter: 'sqlite3', database: ":memory:", pool: 5 }.freeze
 
   class << self
-    def memory_dbconfig
-      @memory_dbconfig || MEMORY_DBCONFIG
-    end
-
-    def memory_dbconfig=(config)
-      @memory_dbconfig = config
-    end
-
     def data_dir
       @data_dir || File.join('config', 'data')
     end
 
     def data_dir=(path)
       @data_dir = path
-    end
-
-    def included(base)
-      base.extend DataLoading
-      base.extend Associations
-      base.send :include, ReadOnly
-      base.remove_connection if base.connected?
-      base.establish_connection(memory_dbconfig)
     end
   end
 
@@ -213,5 +194,17 @@ module ConstantRecord
         raise ActiveRecord::ReadOnlyRecord
       end
     end
+  end
+
+  #
+  # Base class to inherit from so we can share the same memory database
+  #
+  class Base < ActiveRecord::Base
+    extend  DataLoading
+    extend  Associations
+    include ReadOnly
+
+    self.abstract_class = true
+    establish_connection ConstantRecord::DATABASE_CONFIG
   end
 end

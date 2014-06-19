@@ -25,12 +25,10 @@ Then run `bundle install`. Or, install it yourself manually, if you're into that
 
 ## Usage
 
-Just `include ConstantRecord` in any ActiveRecord class. Then, you can use `data` to add
-data directly in that class for clarity:
+Inherit from `ConstantRecord::Base` just like you would with ActiveRecord.
+Then, you can use `data` to add data directly in that class for clarity:
 
-    class Genre < ActiveRecord::Base
-      include ConstantRecord
-
+    class Genre < ConstantRecord::Base
       data id: 1, name: "Rock",    slug: "rock"
       data id: 2, name: "Hip-Hop", slug: "hiphop"
       data id: 3, name: "Pop",     slug: "pop"
@@ -38,8 +36,7 @@ data directly in that class for clarity:
 
 Or, you can choose to keep your data in a YAML file:
 
-    class Genre < ActiveRecord::Base
-      include ConstantRecord
+    class Genre < ConstantRecord::Base
       load_data File.join(Rails.root, 'config', 'data', 'genres.yml')
     end
 
@@ -59,8 +56,7 @@ The YAML file should be an array of hashes:
 
 You can omit the filename if it follows the naming convention of `config/data/[table_name].yml`:
 
-    class Genre < ActiveRecord::Base
-      include ConstantRecord
+    class Genre < ConstantRecord::Base
       load_data  # config/data/genres.yml
     end
 
@@ -76,9 +72,7 @@ you use in the *first* `data` declaration.  **Important:** This means if you hav
 columns that aren't always present, *make sure to include them with `column_name: nil` on
 the first `data` line:*
 
-    class Genre < ActiveRecord::Base
-      include ConstantRecord
-
+    class Genre < ConstantRecord::Base
       data id: 1, name: "Rock",    slug: "rock",   region: nil, country: nil
       data id: 2, name: "Hip-Hop", slug: "hiphop", region: 'North America'
       data id: 3, name: "Pop",     slug: "pop",    country: 'US'
@@ -103,9 +97,7 @@ You'll get an `ActiveRecord::ReadOnlyRecord` exception.
 ConstantRecord will also create constants on the fly for you if you have a `name` column.
 Revisiting our example:
 
-    class Genre < ActiveRecord::Base
-      include ConstantRecord
-
+    class Genre < ConstantRecord::Base
       data id: 1, name: "Rock",    slug: "rock"
       data id: 2, name: "Hip-Hop", slug: "hiphop"
       data id: 3, name: "Pop",     slug: "pop"
@@ -130,9 +122,7 @@ Internally, ActiveRecord tries to do joins to retrieve associations.  This doesn
 the records live in different tables.  Have no fear, you just need to `include ConstantRecord::Associations`
 in the normal ActiveRecord class that is trying to associate to your ConstantRecord class:
 
-    class Genre < ActiveRecord::Base
-      include ConstantRecord
-
+    class Genre < ConstantRecord::Base
       has_many :song_genres
       has_many :songs, through: :song_genres
 
@@ -141,13 +131,12 @@ in the normal ActiveRecord class that is trying to associate to your ConstantRec
       data id: 3, name: "Pop",     slug: "pop",    country: 'US'
     end
 
-    class SongGenre < ActiveRecord::Base
+    class SongGenre < ConstantRecord::Base
       belongs_to :genre_id
       belongs_to :song_id
     end
 
-    class Song < ActiveRecord::Base
-      include ConstantRecord::Associations
+    class Song < ConstantRecord::Base
       has_many :song_genres
       has_many :songs, through: :song_genres
     end
@@ -165,8 +154,7 @@ the internals of ActiveRecord, which I don't want to do for 17 different reasons
 
 If you forget to define data, you'll get a "table doesn't exist" error:
 
-    class Publisher < ActiveRecord::Base
-      include ConstantRecord
+    class Publisher < ConstantRecord::Base
 
       # Oops no data
 
@@ -182,9 +170,7 @@ This is because the table is created lazily when you first load data.
 
 If you try to add a custom column on a different `data` line:
 
-    class Genre < ActiveRecord::Base
-      include ConstantRecord
-
+    class Genre < ConstantRecord::Base
       data id: 1, name: "Rock",    slug: "rock"
       data id: 2, name: "Hip-Hop", slug: "hiphop"
       data id: 3, name: "Pop",     slug: "pop", ranking: 1  # oops
