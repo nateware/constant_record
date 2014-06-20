@@ -92,6 +92,41 @@ Attempts to modify values will fail:
 
 You'll get an `ActiveRecord::ReadOnlyRecord` exception.
 
+## Associations
+
+Internally, ActiveRecord tries to do joins to retrieve associations.  This doesn't work, since
+the records live in different tables.  Have no fear, you just need to `include ConstantRecord::Associations`
+in the ActiveRecord class that is trying to associate to your ConstantRecord class:
+
+    class Genre < ConstantRecord::Base
+      has_many :song_genres
+      has_many :songs, through: :song_genres
+
+      data id: 1, name: "Rock",    slug: "rock"
+      data id: 2, name: "Hip-Hop", slug: "hiphop"
+      data id: 3, name: "Pop",     slug: "pop"
+    end
+
+    class SongGenre < ActiveRecord::Base
+      belongs_to :genre_id
+      belongs_to :song_id
+    end
+
+    class Song < ActiveRecord::Base
+      include ConstantRecord::Associations  # <-- IMPORTANT
+      has_many :song_genres
+      has_many :songs, through: :song_genres
+    end
+
+If you forget to do this, you'll get an error like this:
+
+    irb(main):001:0> @song = Song.first
+    irb(main):002:0> @song.genres
+    ActiveRecord::StatementInvalid: Could not find table 'song_genres'
+
+It would be great to remove this shim, but I can't currently see a way without monkey-patching
+the internals of ActiveRecord, which I don't want to do for 17 different reasons.
+
 ## Auto Constants
 
 ConstantRecord will also create constants on the fly for you if you have a `name` column.
@@ -115,41 +150,6 @@ This makes it cleaner to do queries in your app:
     Song.where(genre_id: Genre::ROCK)
 
 And so on.
-
-## Associations
-
-Internally, ActiveRecord tries to do joins to retrieve associations.  This doesn't work, since
-the records live in different tables.  Have no fear, you just need to `include ConstantRecord::Associations`
-in the normal ActiveRecord class that is trying to associate to your ConstantRecord class:
-
-    class Genre < ConstantRecord::Base
-      has_many :song_genres
-      has_many :songs, through: :song_genres
-
-      data id: 1, name: "Rock",    slug: "rock",   region: nil, country: nil
-      data id: 2, name: "Hip-Hop", slug: "hiphop", region: 'North America'
-      data id: 3, name: "Pop",     slug: "pop",    country: 'US'
-    end
-
-    class SongGenre < ActiveRecord::Base
-      belongs_to :genre_id
-      belongs_to :song_id
-    end
-
-    class Song < ActiveRecord::Base
-      include ConstantRecord::Associations`
-      has_many :song_genres
-      has_many :songs, through: :song_genres
-    end
-
-If you forget to do this, you'll get an error like this:
-
-    irb(main):001:0> @song = Song.first
-    irb(main):002:0> @song.genres
-    ActiveRecord::StatementInvalid: Could not find table 'song_genres'
-
-It would be great to remove this shim, but I can't currently see a way without monkey-patching
-the internals of ActiveRecord, which I don't want to do for 17 different reasons.
 
 ## Debugging
 

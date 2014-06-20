@@ -74,8 +74,8 @@ module ConstantRecord
 
     # Define a constant record: data id: 1, name: "California", slug: "CA"
     def data(attrib, reload=false)
-      attrib.symbolize_keys!
       raise ArgumentError, "#{self}.data expects a Hash of attributes" unless attrib.is_a?(Hash)
+      attrib.symbolize_keys!
 
       unless attrib[primary_key.to_sym]
         raise ArgumentError, "#{self}.data missing primary key '#{primary_key}': #{attrib.inspect}"
@@ -83,22 +83,25 @@ module ConstantRecord
 
       # Save data definitions for reload on connection change
       @data_rows ||= []
-      @data_rows << attrib unless reload
+
+      # Check for duplicates
+      unless reload
+        if old_record = @data_rows.detect{|r| r[primary_key.to_sym] == attrib[primary_key.to_sym] }
+          raise ActiveRecord::RecordNotUnique,
+            "Duplicate #{self} id=#{attrib[primary_key.to_sym]} found: #{attrib} vs #{old_record}"
+        end
+        @data_rows << attrib
+      end
 
       # Create table dynamically based on first row of data
       create_memory_table(attrib) unless connection.table_exists?(table_name)
 
+      # Save to in-memory table
       new_record = new(attrib)
       new_record.id = attrib[primary_key.to_sym]
-
-      # Check for duplicates
-      if old_record = find_by(id: new_record.id)
-        raise ActiveRecord::RecordNotUnique,
-          "Duplicate #{self} id=#{new_record.id} found: #{new_record} vs #{old_record}"
-      end
       new_record.save!
 
-      # create Ruby constants as well, so "id: 3, name: Sky" gets SKY=3
+      # Create Ruby constants as well, so "id: 3, name: Sky" generates SKY=3
       if new_record.respond_to?(:name) and name = new_record.name
         const_name =
           name.to_s.upcase.strip.gsub(/[-\s]+/,'_').sub(/^[0-9_]+/,'').gsub(/\W+/,'')
@@ -143,7 +146,7 @@ module ConstantRecord
   #
   module Associations
     def self.included(base)
-      base.extend self # support "include" as well
+      base.extend self # support "include"
     end
 
     #
@@ -153,7 +156,6 @@ module ConstantRecord
     # so that we're not making real DB calls.
     #
     def has_many(other_table, options={})
-      # puts "#{self}(#{table_name}).has_many #{other_table.inspect}, #{options.inspect}"
       if join_tab = options[:through]
         foreign_key = options[:foreign_key] || other_table.to_s.singularize.foreign_key
         prime_key   = options[:primary_key] || primary_key
