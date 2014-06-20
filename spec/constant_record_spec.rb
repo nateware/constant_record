@@ -117,7 +117,7 @@ describe "ConstantRecord" do
       author.articles.find(4).id.should == 4
     end
 
-    it "has_many through (up)" do
+    it "has_many through (down)" do
       ArticlePublisher.create!(article_id: 4,  publisher_id: 7)
       ArticlePublisher.create!(article_id: 5,  publisher_id: 7)
       ArticlePublisher.create!(article_id: 60, publisher_id: 7) # bogus
@@ -130,13 +130,15 @@ describe "ConstantRecord" do
       end
     end
 
-    it "has_many through (down)" do
+    it "has_many through (up)" do
       ArticlePublisher.create!(article_id: 2, publisher_id: 1)
       ArticlePublisher.create!(article_id: 2, publisher_id: 2)
       ArticlePublisher.create!(article_id: 2, publisher_id: 30) # bogus
       article = Article.find(2)
       article.article_publishers.count.should == 3
       article.publishers.count.should == 2
+      publisher = article.publishers.find(1)
+      publisher.should == Publisher.find(1)
     end
   end
 

@@ -156,6 +156,9 @@ module ConstantRecord
     # so that we're not making real DB calls.
     #
     def has_many(other_table, options={})
+      super other_table, options.dup # make AR happy
+
+      # Redefine association method in the class
       if join_tab = options[:through]
         foreign_key = options[:foreign_key] || other_table.to_s.singularize.foreign_key
         prime_key   = options[:primary_key] || primary_key
@@ -168,8 +171,6 @@ module ConstantRecord
           return [] if ids.empty?
           class_name.constantize.where(id: ids)
         end
-      else
-        super other_table, options
       end
     end
   end
