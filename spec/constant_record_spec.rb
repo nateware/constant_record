@@ -12,6 +12,17 @@ describe "ConstantRecord" do
       Author.connection.should == Publisher.connection
       Author.connection.should == ConstantRecord::Base.connection
     end
+
+    it "reloads the table on connection change" do
+      Publisher.load_data
+      old_con = Publisher.connection
+      pub_ids = Publisher.pluck(:id)
+      ConstantRecord::Base.remove_connection
+      new_con = Publisher.connection
+      new_con.should != old_con
+      Publisher.pluck(:id).should == pub_ids
+      Publisher.where('id is not null').delete_all # hackaround ReadOnlyRecord
+    end
   end
 
   describe "loading data" do

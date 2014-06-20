@@ -8,7 +8,7 @@ Compatible with all current versions of Rails, from 3.x up through 4.1
 Unlike previous (ambitious) approaches that have tried to duplicate ActiveRecord
 functionality in a separate set of classes, this is a simple shim of < 200 LOC
 that creates an in-memory SQLite database for the relevant models.  This is designed
-to minimize breakage between Rails versions, and also avoids recreating ActiveRecord
+to minimize breakage between Rails versions, and also avoids reimplementing ActiveRecord
 features.
 
 ## Installation

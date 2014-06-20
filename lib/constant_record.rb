@@ -58,6 +58,7 @@ module ConstantRecord
       end
 
       # Call our method to populate data
+      @data_rows = []
       records.each{|r| data r}
 
       @loaded = true
@@ -72,7 +73,7 @@ module ConstantRecord
     end
 
     # Define a constant record: data id: 1, name: "California", slug: "CA"
-    def data(attrib)
+    def data(attrib, reload=false)
       attrib.symbolize_keys!
       raise ArgumentError, "#{self}.data expects a Hash of attributes" unless attrib.is_a?(Hash)
 
@@ -80,13 +81,18 @@ module ConstantRecord
         raise ArgumentError, "#{self}.data missing primary key '#{primary_key}': #{attrib.inspect}"
       end
 
+      # Save data definitions for reload on connection change
+      @data_rows ||= []
+      @data_rows << attrib unless reload
+
+      # Create table dynamically based on first row of data
       create_memory_table(attrib) unless connection.table_exists?(table_name)
 
       new_record = new(attrib)
       new_record.id = attrib[primary_key.to_sym]
 
       # Check for duplicates
-      if old_record = find_by_id(new_record.id)
+      if old_record = find_by(id: new_record.id)
         raise ActiveRecord::RecordNotUnique,
           "Duplicate #{self} id=#{new_record.id} found: #{new_record} vs #{old_record}"
       end
@@ -123,6 +129,12 @@ module ConstantRecord
           t.column col, type
         end
       end
+    end
+
+    # Reloads the table when the connection has changed
+    def reload_memory_table
+      return false unless @data_rows
+      @data_rows.each{|r| data r, true}
     end
   end
 
@@ -203,6 +215,17 @@ module ConstantRecord
     extend  DataLoading
     extend  Associations
     include ReadOnly
+
+    # Reload table if connection changes. Since it's in-memory, a connection
+    # change means the the table gets wiped.
+    def self.connection
+      conn = super
+      if (@previous_connection ||= conn) != conn
+        @previous_connection = conn # avoid infinite loop
+        reload_memory_table
+      end
+      conn
+    end
 
     self.abstract_class = true
     establish_connection ConstantRecord::DATABASE_CONFIG
