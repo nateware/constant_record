@@ -131,12 +131,13 @@ in the normal ActiveRecord class that is trying to associate to your ConstantRec
       data id: 3, name: "Pop",     slug: "pop",    country: 'US'
     end
 
-    class SongGenre < ConstantRecord::Base
+    class SongGenre < ActiveRecord::Base
       belongs_to :genre_id
       belongs_to :song_id
     end
 
-    class Song < ConstantRecord::Base
+    class Song < ActiveRecord::Base
+      include ConstantRecord::Associations`
       has_many :song_genres
       has_many :songs, through: :song_genres
     end
